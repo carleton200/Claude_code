@@ -68,8 +68,99 @@
     return RECIPES.find(r => (r.a === a && r.b === b) || (r.a === b && r.b === a)) || null;
   }
 
-  window.TinHeart = { ITEMS, RECIPES, STARTING_ITEMS, HEART_SLOTS, findRecipe };
   // ===== END DATA =====
+
+  // ===== LOGIC: pure state transitions, hints, persistence =====
+  const SAVE_KEY = 'tinheart.v1';
+  const INSTALL_HINT = 'Your parts are ready — install them in the companion\'s chest.';
+
+  // For each heart part: the set of items on a path leading to it (itself included).
+  const PART_ANCESTORS = (function () {
+    const map = {};
+    HEART_SLOTS.forEach(part => {
+      const set = new Set([part]);
+      let grew = true;
+      while (grew) {
+        grew = false;
+        RECIPES.forEach(r => {
+          if (set.has(r.result)) [r.a, r.b].forEach(id => { if (!set.has(id)) { set.add(id); grew = true; } });
+        });
+      }
+      map[part] = set;
+    });
+    return map;
+  })();
+
+  function newState() {
+    return { discovered: STARTING_ITEMS.slice(), installed: {}, failStreak: 0, hint: null, finished: false };
+  }
+
+  function foundCount(s) {
+    return s.discovered.length - STARTING_ITEMS.length;
+  }
+
+  function pickHint(s) {
+    const have = new Set(s.discovered);
+    const candidates = RECIPES.filter(r => !have.has(r.result) && have.has(r.a) && have.has(r.b));
+    if (!candidates.length) return INSTALL_HINT;
+    const useful = candidates.find(r => HEART_SLOTS.some(p => !s.installed[p] && PART_ANCESTORS[p].has(r.result)));
+    return (useful || candidates[0]).hint;
+  }
+
+  function combine(s, a, b) {
+    if (!s.discovered.includes(a) || !s.discovered.includes(b)) return { state: s, outcome: 'dud', result: null };
+    const recipe = findRecipe(a, b);
+    if (!recipe) {
+      const next = { ...s, discovered: s.discovered.slice(), installed: { ...s.installed }, failStreak: s.failStreak + 1 };
+      if (next.failStreak >= 3) next.hint = pickHint(next);
+      return { state: next, outcome: 'dud', result: null };
+    }
+    if (s.discovered.includes(recipe.result)) {
+      return { state: { ...s, discovered: s.discovered.slice(), installed: { ...s.installed } }, outcome: 'known', result: recipe.result };
+    }
+    const next = { ...s, discovered: [...s.discovered, recipe.result], installed: { ...s.installed }, failStreak: 0, hint: null };
+    return { state: next, outcome: 'new', result: recipe.result };
+  }
+
+  function install(s, item, slot) {
+    const ok = item === slot && HEART_SLOTS.includes(slot) && s.discovered.includes(item) && !s.installed[slot] && !s.finished;
+    if (!ok) return { state: s, ok: false };
+    const installed = { ...s.installed, [slot]: item };
+    const finished = HEART_SLOTS.every(p => installed[p]);
+    return { state: { ...s, discovered: s.discovered.slice(), installed, finished }, ok: true };
+  }
+
+  function saveState(s) {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) { /* storage unavailable */ }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      if (!d || typeof d !== 'object' || !Array.isArray(d.discovered)) return null;
+      if (!d.discovered.every(id => typeof id === 'string' && Object.prototype.hasOwnProperty.call(ITEMS, id))) return null;
+      if (!STARTING_ITEMS.every(id => d.discovered.includes(id))) return null;
+      if (!d.installed || typeof d.installed !== 'object' || Array.isArray(d.installed)) return null;
+      if (typeof d.failStreak !== 'number') return null;
+      return {
+        discovered: d.discovered.slice(),
+        installed: { ...d.installed },
+        failStreak: d.failStreak,
+        hint: typeof d.hint === 'string' ? d.hint : null,
+        finished: d.finished === true
+      };
+    } catch (e) { return null; }
+  }
+
+  function clearSave() {
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* storage unavailable */ }
+  }
+
+  window.TinHeart = { ITEMS, RECIPES, STARTING_ITEMS, HEART_SLOTS, findRecipe,
+    newState, combine, install, foundCount, pickHint, saveState, loadState, clearSave };
+  // ===== END LOGIC =====
 })();
 </script>
 </body>
