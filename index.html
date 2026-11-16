@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Tin Heart</title>
+</head>
+<body>
+<script>
+(function () {
+  'use strict';
+
+  // ===== DATA: items, recipes, slots (later tasks add logic and DOM below) =====
+  const ITEMS = {
+    brass:            { name: 'Brass',            kind: 'base',     flavor: 'A dull gold that remembers being a bell.' },
+    ember:            { name: 'Ember',            kind: 'base',     flavor: 'A coal that hums when nobody is looking.' },
+    quicksilver:      { name: 'Quicksilver',      kind: 'base',     flavor: 'It slips away and then politely returns.' },
+    moth_wing:        { name: 'Moth Wing',        kind: 'base',     flavor: 'Dusty, soft, and secretly very proud.' },
+    molten_brass:     { name: 'Molten Brass',     kind: 'material', flavor: 'Liquid sunset with a pinch of ambition.' },
+    living_vapor:     { name: 'Living Vapor',     kind: 'material', flavor: 'It curls up like a cat made of steam.' },
+    silver_feather:   { name: 'Silver Feather',   kind: 'material', flavor: 'Lighter than a secret, brighter than a spoon.' },
+    gilded_wing:      { name: 'Gilded Wing',      kind: 'material', flavor: 'A wing that thinks it is jewellery.' },
+    spark:            { name: 'Spark',            kind: 'material', flavor: 'A tiny tantrum of light.' },
+    gear:             { name: 'Gear',             kind: 'material', flavor: 'Round, toothy, and always eager to turn.' },
+    mirror_drop:      { name: 'Mirror Drop',      kind: 'material', flavor: 'A bead of silver that stares back.' },
+    cog_shell:        { name: 'Cog Shell',        kind: 'material', flavor: 'Armour for a heart that has yet to exist.' },
+    ticking_gear:     { name: 'Ticking Gear',     kind: 'material', flavor: 'It counts the seconds and mutters about them.' },
+    breath:           { name: 'Breath',           kind: 'material', flavor: 'The first sigh of something not yet alive.' },
+    flutter_membrane: { name: 'Flutter Membrane', kind: 'material', flavor: 'Thin as a rumour and twice as nervous.' },
+    glow_glass:       { name: 'Glow Glass',       kind: 'material', flavor: 'It holds a small, patient dawn.' },
+    lightning_bead:   { name: 'Lightning Bead',   kind: 'material', flavor: 'A storm, politely rolled into a pearl.' },
+    left_chamber:     { name: 'Left Chamber',     kind: 'part',     flavor: 'One room of the heart, swept and ready.' },
+    right_chamber:    { name: 'Right Chamber',    kind: 'part',     flavor: 'Its twin, slightly more dramatic.' },
+    flutter_valve:    { name: 'Flutter Valve',    kind: 'part',     flavor: 'A door that opens and closes like an eyelash.' },
+    spark_core:       { name: 'Spark Core',       kind: 'part',     flavor: 'The little sun the whole machine leans toward.' },
+    rhythm_spring:    { name: 'Rhythm Spring',    kind: 'part',     flavor: 'It bounces in three-quarter time.' },
+    ash:              { name: 'Ash',              kind: 'side',     flavor: 'Grey, silent, and a little insulted.' },
+    firefly:          { name: 'Firefly',          kind: 'side',     flavor: 'A wandering lamp with opinions.' }
+  };
+
+  const RECIPES = [
+    { a: 'brass', b: 'ember', result: 'molten_brass', hint: 'Gold that has met fire and given up its shape.' },
+    { a: 'ember', b: 'quicksilver', result: 'living_vapor', hint: 'Heat wakes the metal that never sits still.' },
+    { a: 'quicksilver', b: 'moth_wing', result: 'silver_feather', hint: 'What does a wing become when dipped in liquid moonlight?' },
+    { a: 'brass', b: 'moth_wing', result: 'gilded_wing', hint: 'Dress the dusty wing in something golden.' },
+    { a: 'ember', b: 'ember', result: 'spark', hint: 'Two coals whispering together might strike a flash.' },
+    { a: 'brass', b: 'brass', result: 'gear', hint: 'Metal meeting its own reflection grows teeth.' },
+    { a: 'quicksilver', b: 'quicksilver', result: 'mirror_drop', hint: 'Silver pooled with silver sees itself.' },
+    { a: 'molten_brass', b: 'gear', result: 'cog_shell', hint: 'Pour the glowing gold over something with teeth.' },
+    { a: 'gear', b: 'spark', result: 'ticking_gear', hint: 'Give the toothed wheel a reason to start counting.' },
+    { a: 'living_vapor', b: 'moth_wing', result: 'breath', hint: 'Let the curling cloud settle on a soft wing.' },
+    { a: 'silver_feather', b: 'gilded_wing', result: 'flutter_membrane', hint: 'Two wings, one bright and one gold, make a single flutter.' },
+    { a: 'mirror_drop', b: 'ember', result: 'glow_glass', hint: 'Warm the silver bead until it shines from within.' },
+    { a: 'spark', b: 'quicksilver', result: 'lightning_bead', hint: 'A flash that finds a liquid to ride.' },
+    { a: 'cog_shell', b: 'breath', result: 'left_chamber', hint: 'A hard shell wants something to sigh inside it.' },
+    { a: 'cog_shell', b: 'living_vapor', result: 'right_chamber', hint: 'The same shell, but with a restless cloud for company.' },
+    { a: 'flutter_membrane', b: 'gear', result: 'flutter_valve', hint: 'Teach the trembling skin to open and close on a wheel.' },
+    { a: 'lightning_bead', b: 'glow_glass', result: 'spark_core', hint: 'A caged storm and a patient dawn, joined as one small sun.' },
+    { a: 'ticking_gear', b: 'silver_feather', result: 'rhythm_spring', hint: 'Let the counting wheel bounce on something light.' },
+    { a: 'moth_wing', b: 'ember', result: 'ash', hint: 'What do wings do when they get too close to the coal?' },
+    { a: 'breath', b: 'spark', result: 'firefly', hint: 'A sigh with a flash inside it will wander off glowing.' }
+  ];
+
+  const STARTING_ITEMS = ['brass', 'ember', 'quicksilver', 'moth_wing'];
+  const HEART_SLOTS = ['left_chamber', 'right_chamber', 'flutter_valve', 'spark_core', 'rhythm_spring'];
+
+  function findRecipe(a, b) {
+    return RECIPES.find(r => (r.a === a && r.b === b) || (r.a === b && r.b === a)) || null;
+  }
+
+  window.TinHeart = { ITEMS, RECIPES, STARTING_ITEMS, HEART_SLOTS, findRecipe };
+  // ===== END DATA =====
+})();
+</script>
+</body>
+</html>
