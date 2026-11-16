@@ -31,6 +31,29 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 #recipe-book{text-align:left;padding-left:22px;font-size:.9rem;color:var(--muted)}
 #crucible.smoke::after{content:'';position:absolute;left:50%;top:30%;width:60px;height:60px;margin-left:-30px;border-radius:50%;background:radial-gradient(#999,transparent 70%);animation:smoke .8s ease-out forwards;pointer-events:none}
 @keyframes smoke{from{opacity:.9;transform:translateY(0) scale(.6)}to{opacity:0;transform:translateY(-60px) scale(2)}}
+#companion{max-width:300px;margin:0 auto}
+#companion .figure{display:block;width:100%;height:auto}
+#companion .eye{fill:#3a2a1e;transition:fill .6s}
+#companion .bulb{fill:#6b4426;transition:fill .6s}
+#chest{display:grid;grid-template-columns:1fr 64px 1fr;grid-template-areas:"lc heart rc" "fv heart sc" ". rs .";gap:8px;align-items:center;margin-top:-4px;padding:14px 10px;background:#8a5a33;border:3px solid var(--brass);border-top:0;border-radius:0 0 26px 26px;box-shadow:inset 0 0 0 6px #6b4426}
+#heart{grid-area:heart;width:56px;height:52px;justify-self:center;fill:#4a3120;stroke:var(--copper);stroke-width:1.5;transition:fill .6s}
+.chest-slot{min-height:42px;padding:4px 6px;background:var(--wood);color:var(--muted);border:2px dashed var(--brass);border-radius:8px;font:inherit;font-size:.78rem;cursor:pointer}
+.chest-slot[data-slot=left_chamber]{grid-area:lc}.chest-slot[data-slot=right_chamber]{grid-area:rc}
+.chest-slot[data-slot=flutter_valve]{grid-area:fv}.chest-slot[data-slot=spark_core]{grid-area:sc}
+.chest-slot[data-slot=rhythm_spring]{grid-area:rs}
+.chest-slot[data-installed]{border-style:solid;border-color:var(--ember);color:var(--ink);background:#5a3418;box-shadow:inset 0 0 8px rgba(255,138,42,.5);cursor:default}
+.chest-slot.shake{animation:shake .5s;border-color:#d64b3a}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+#companion.alive .eye{fill:#ffd36b;filter:drop-shadow(0 0 4px #ffb02a)}
+#companion.alive .bulb{fill:var(--ember)}
+#companion.alive #heart{fill:#d64b3a;stroke:var(--ember);animation:beat 1s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.18)}30%{transform:scale(.96)}45%{transform:scale(1.1)}}
+#ending{margin-top:14px;padding:12px;text-align:center;background:var(--wood);border:2px solid var(--ember);border-radius:10px}
+#ending[hidden]{display:none}
+#ending p{margin:0 0 8px;line-height:1.4}
+#ending.intro{animation:rise 1.2s ease-out both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+#play-again{background:var(--copper);color:var(--ink);border:0;border-radius:8px;padding:8px 22px;font:inherit;cursor:pointer}
 </style>
 </head>
 <body>
@@ -44,7 +67,36 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 <div id="hint" hidden></div>
 <h2>Recipe Book</h2><ol id="recipe-book"></ol>
 </section>
-<section id="companion-panel" class="panel"></section>
+<section id="companion-panel" class="panel"><h2>Companion</h2>
+<div id="companion">
+<svg class="figure" viewBox="0 0 200 118" aria-hidden="true">
+  <line x1="100" y1="6" x2="100" y2="22" stroke="#c9a24a" stroke-width="3"/>
+  <circle class="bulb" cx="100" cy="6" r="5"/>
+  <rect x="58" y="22" width="84" height="62" rx="16" fill="#8a5a33" stroke="#c9a24a" stroke-width="3"/>
+  <circle cx="64" cy="30" r="2.5" fill="#c9a24a"/><circle cx="136" cy="30" r="2.5" fill="#c9a24a"/>
+  <circle cx="64" cy="76" r="2.5" fill="#c9a24a"/><circle cx="136" cy="76" r="2.5" fill="#c9a24a"/>
+  <circle cx="82" cy="48" r="11" fill="#2b1b12" stroke="#c9a24a" stroke-width="2"/>
+  <circle cx="118" cy="48" r="11" fill="#2b1b12" stroke="#c9a24a" stroke-width="2"/>
+  <circle class="eye" cx="82" cy="48" r="5"/><circle class="eye" cx="118" cy="48" r="5"/>
+  <path class="mouth" d="M86 70 Q100 72 114 70" fill="none" stroke="#2b1b12" stroke-width="3" stroke-linecap="round"/>
+  <rect x="90" y="84" width="20" height="10" fill="#6b4426" stroke="#c9a24a" stroke-width="2"/>
+  <path d="M30 118 Q30 96 58 94 H142 Q170 96 170 118" fill="#8a5a33" stroke="#c9a24a" stroke-width="3"/>
+</svg>
+<div id="chest">
+<svg id="heart" viewBox="0 0 40 36" aria-hidden="true"><path d="M20 34 4 18C-2 11 3 1 11 2c4 0 7 3 9 6 2-3 5-6 9-6 8-1 13 9 7 16z"/></svg>
+<button type="button" class="chest-slot" data-slot="left_chamber">Left Chamber</button>
+<button type="button" class="chest-slot" data-slot="right_chamber">Right Chamber</button>
+<button type="button" class="chest-slot" data-slot="flutter_valve">Flutter Valve</button>
+<button type="button" class="chest-slot" data-slot="spark_core">Spark Core</button>
+<button type="button" class="chest-slot" data-slot="rhythm_spring">Rhythm Spring</button>
+</div>
+</div>
+<div id="ending" hidden>
+<p>Tick. Tock. <em>Thump.</em> The little companion blinks its new, glowing eyes, presses a hand to its chest, and listens.</p>
+<p>Somewhere inside the brass, a tin heart is beating. It looks at you as if it has always known you.</p>
+<button type="button" id="play-again">Play again</button>
+</div>
+</section>
 </main>
 <script>
 (function () {
@@ -227,6 +279,8 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
   let message = '';
   let lastNew = null;
   let smokeTimer = null;
+  let finishedThisSession = false;
+  const shakeTimers = {};
 
   function render(s) {
     const shelf = $('shelf-items');
@@ -259,6 +313,15 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
       li.textContent = ITEMS[r.a].name + ' + ' + ITEMS[r.b].name + ' → ' + ITEMS[r.result].name;
       book.appendChild(li);
     });
+    document.querySelectorAll('#chest [data-slot]').forEach(el => {
+      const id = el.getAttribute('data-slot');
+      if (s.installed[id]) { el.setAttribute('data-installed', s.installed[id]); el.title = ITEMS[id].name + ' (installed)'; }
+      else { el.removeAttribute('data-installed'); el.title = 'Needs: ' + ITEMS[id].name; }
+    });
+    $('companion').classList.toggle('alive', !!s.finished);
+    const ending = $('ending');
+    ending.hidden = !s.finished;
+    ending.classList.toggle('intro', !!s.finished && finishedThisSession);
   }
 
   function dispatch(next) {
@@ -302,6 +365,44 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
       smokeTimer = setTimeout(() => c.classList.remove('smoke'), 800);
     }
     dispatch(r.state);
+  });
+
+  function shake(el) {
+    const id = el.getAttribute('data-slot');
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+    clearTimeout(shakeTimers[id]);
+    shakeTimers[id] = setTimeout(() => el.classList.remove('shake'), 500);
+  }
+
+  $('chest').addEventListener('click', e => {
+    const el = e.target.closest('[data-slot]');
+    if (!el || !selected) return;
+    const slot = el.getAttribute('data-slot');
+    const r = install(state, selected, slot);
+    lastNew = null;
+    if (!r.ok) {
+      shake(el);
+      message = state.installed[selected] ? ITEMS[selected].name + ' is already installed.'
+        : 'The ' + ITEMS[slot].name + ' socket refuses that.';
+      render(state);
+      return;
+    }
+    selected = null;
+    if (r.state.finished) { finishedThisSession = true; message = 'The last part clicks home…'; }
+    else message = ITEMS[slot].name + ' clicks into place.';
+    dispatch(r.state);
+  });
+
+  $('play-again').addEventListener('click', () => {
+    clearSave();
+    selected = null;
+    slots = { a: null, b: null };
+    message = '';
+    lastNew = null;
+    finishedThisSession = false;
+    dispatch(newState());
   });
 
   render(state);

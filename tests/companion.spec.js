@@ -1,0 +1,89 @@
+const { test, expect } = require('@playwright/test');
+const { combineVia, installVia, playToEnd } = require('./helpers');
+
+test.describe('companion', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+  });
+
+  async function craftLeftChamber(page) {
+    for (const [a, b] of [['brass', 'ember'], ['brass', 'brass'], ['molten_brass', 'gear'],
+      ['ember', 'quicksilver'], ['living_vapor', 'moth_wing'], ['cog_shell', 'breath']]) {
+      await combineVia(page, a, b);
+    }
+    await expect(page.locator('#shelf [data-item="left_chamber"]')).toBeVisible();
+  }
+
+  test('chest shows 5 empty slots', async ({ page }) => {
+    await expect(page.locator('#chest [data-slot]')).toHaveCount(5);
+    await expect(page.locator('#chest [data-installed]')).toHaveCount(0);
+  });
+
+  test('wrong part is rejected with a shake', async ({ page }) => {
+    await craftLeftChamber(page);
+    await page.locator('#shelf [data-item="left_chamber"]').click();
+    await page.locator('#chest [data-slot="right_chamber"]').click();
+    const slot = page.locator('#chest [data-slot="right_chamber"]');
+    await expect(slot).toHaveClass(/shake/);
+    await expect(slot).not.toHaveAttribute('data-installed', /.+/);
+  });
+
+  test('correct part installs and greys out on the shelf', async ({ page }) => {
+    await craftLeftChamber(page);
+    await installVia(page, 'left_chamber');
+    const slot = page.locator('#chest [data-slot="left_chamber"]');
+    await expect(slot).toHaveAttribute('data-installed', 'left_chamber');
+    await expect(page.locator('#shelf [data-item="left_chamber"]')).toHaveClass(/installed/);
+    await installVia(page, 'left_chamber');
+    await expect(slot).toHaveAttribute('data-installed', 'left_chamber');
+    await expect(page.locator('#chest [data-installed]')).toHaveCount(1);
+  });
+
+  test('progress survives a reload', async ({ page }) => {
+    await combineVia(page, 'brass', 'ember');
+    await page.reload();
+    await expect(page.locator('#found-count')).toHaveText('1 / 20');
+    await expect(page.locator('#shelf [data-item="molten_brass"]')).toBeVisible();
+  });
+
+  test('full playthrough reaches the ending', async ({ page }) => {
+    await playToEnd(page);
+    await expect(page.locator('#companion')).toHaveClass(/alive/);
+    await expect(page.locator('#ending')).toBeVisible();
+    await expect(page.locator('#found-count')).toHaveText('18 / 20');
+  });
+
+  test('reload after ending shows finished state without replaying', async ({ page }) => {
+    await playToEnd(page);
+    await page.reload();
+    await expect(page.locator('#companion')).toHaveClass(/alive/);
+    await expect(page.locator('#ending')).toBeVisible();
+    await expect(page.locator('#ending')).not.toHaveClass(/intro/);
+  });
+
+  test('Play again resets everything', async ({ page }) => {
+    await playToEnd(page);
+    await page.locator('#play-again').click();
+    await expect(page.locator('#shelf [data-item]')).toHaveCount(4);
+    await expect(page.locator('#found-count')).toHaveText('0 / 20');
+    await expect(page.locator('#ending')).toBeHidden();
+    await page.reload();
+    await expect(page.locator('#found-count')).toHaveText('0 / 20');
+  });
+});
+
+test.describe('blocked storage', () => {
+  test('game is playable when storage throws', async ({ page }) => {
+    await page.addInitScript(() => {
+      const boom = () => { throw new Error('blocked'); };
+      Storage.prototype.getItem = boom; Storage.prototype.setItem = boom; Storage.prototype.removeItem = boom;
+    });
+    const errors = []; page.on('pageerror', e => errors.push(e));
+    await page.goto('/');
+    await combineVia(page, 'brass', 'ember');
+    await expect(page.locator('#found-count')).toHaveText('1 / 20');
+    expect(errors).toEqual([]);
+  });
+});
