@@ -184,3 +184,35 @@ test('clearSave removes the key', async ({ page }) => {
   }, KEY);
   expect(r).toEqual({ had: true, gone: true });
 });
+
+const loadRaw = (page, raw) => page.evaluate(([k, v]) => { localStorage.setItem(k, v); const r = window.TinHeart.loadState(); localStorage.removeItem(k); return r; }, [KEY, JSON.stringify(raw)]);
+const BASE4 = ['brass', 'ember', 'quicksilver', 'moth_wing'];
+
+test('loadState drops installed entries that are foreign, mismatched or undiscovered', async ({ page }) => {
+  await page.goto('/');
+  const r = await loadRaw(page, { discovered: [...BASE4, 'left_chamber'], installed: { left_chamber: 'left_chamber', right_chamber: 'brass', x: 1, spark_core: 'spark_core' }, failStreak: 0 });
+  expect(r.installed).toEqual({ left_chamber: 'left_chamber' });
+  expect(r.finished).toBe(false);
+});
+
+test('loadState derives finished from the cleaned installed map', async ({ page }) => {
+  await page.goto('/');
+  const incomplete = await loadRaw(page, { discovered: [...BASE4, 'left_chamber'], installed: { left_chamber: 'left_chamber' }, failStreak: 0, finished: true });
+  expect(incomplete.finished).toBe(false);
+  const complete = await loadRaw(page, { discovered: ALL, installed: { left_chamber: 'left_chamber', right_chamber: 'right_chamber', flutter_valve: 'flutter_valve', spark_core: 'spark_core', rhythm_spring: 'rhythm_spring' }, failStreak: 0, finished: false });
+  expect(complete.finished).toBe(true);
+});
+
+test('loadState coerces failStreak to a non-negative integer', async ({ page }) => {
+  await page.goto('/');
+  const neg = await loadRaw(page, { discovered: BASE4, installed: {}, failStreak: -4 });
+  const frac = await loadRaw(page, { discovered: BASE4, installed: {}, failStreak: 2.7 });
+  expect([neg.failStreak, frac.failStreak]).toEqual([0, 2]);
+});
+
+test('loadState rejects non-object installed and non-number failStreak', async ({ page }) => {
+  await page.goto('/');
+  expect(await loadRaw(page, { discovered: BASE4, installed: 'x', failStreak: 0 })).toBeNull();
+  expect(await loadRaw(page, { discovered: BASE4, installed: [], failStreak: 0 })).toBeNull();
+  expect(await loadRaw(page, { discovered: BASE4, installed: {}, failStreak: '3' })).toBeNull();
+});

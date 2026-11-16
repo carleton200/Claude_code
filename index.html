@@ -144,12 +144,17 @@
       if (!STARTING_ITEMS.every(id => d.discovered.includes(id))) return null;
       if (!d.installed || typeof d.installed !== 'object' || Array.isArray(d.installed)) return null;
       if (typeof d.failStreak !== 'number') return null;
+      const installed = {};
+      Object.keys(d.installed).forEach(k => {
+        const v = d.installed[k];
+        if (HEART_SLOTS.includes(k) && v === k && d.discovered.includes(v)) installed[k] = v;
+      });
       return {
         discovered: d.discovered.slice(),
-        installed: { ...d.installed },
-        failStreak: d.failStreak,
+        installed,
+        failStreak: Number.isFinite(d.failStreak) ? Math.max(0, Math.floor(d.failStreak)) : 0,
         hint: typeof d.hint === 'string' ? d.hint : null,
-        finished: d.finished === true
+        finished: HEART_SLOTS.every(p => installed[p])
       };
     } catch (e) { return null; }
   }
