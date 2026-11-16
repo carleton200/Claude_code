@@ -54,6 +54,21 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 #ending.intro{animation:rise 1.2s ease-out both}
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 #play-again{background:var(--copper);color:var(--ink);border:0;border-radius:8px;padding:8px 22px;font:inherit;cursor:pointer}
+#shelf button[draggable=true]{cursor:grab}
+.slot.drop-over,.chest-slot.drop-over{border-style:solid;border-color:var(--ember);box-shadow:0 0 10px var(--ember)}
+@media (max-width:760px){
+  header{padding:10px 12px}
+  h1{font-size:1.3rem}
+  main{grid-template-columns:minmax(0,1fr);gap:12px;padding:12px}
+  .panel{min-height:0;padding:12px}
+  #shelf-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+  #shelf button{min-width:0;overflow-wrap:anywhere;text-align:left}
+  #slots{gap:10px}
+  .slot{width:auto;flex:1 1 0;min-width:0;max-width:140px;overflow-wrap:anywhere}
+  #chest{display:flex;flex-wrap:wrap;justify-content:center}
+  #heart{flex:0 0 100%;width:auto}
+  .chest-slot{flex:1 1 40%;min-width:0;overflow-wrap:anywhere}
+}
 </style>
 </head>
 <body>
@@ -289,6 +304,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
       const b = document.createElement('button');
       b.type = 'button';
       b.setAttribute('data-item', id);
+      b.draggable = true;
       if (selected === id) b.classList.add('selected');
       if (s.installed[id]) { b.classList.add('installed'); b.title = 'Installed'; }
       if (lastNew === id) b.classList.add('glow');
@@ -339,12 +355,17 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
     render(state);
   });
 
+  // Shared by click (select-then-click) and drop.
+  function placeInSlot(k, id) {
+    slots[k] = id;
+    selected = null;
+    render(state);
+  }
+
   ['a', 'b'].forEach(k => {
     $('slot-' + k).addEventListener('click', () => {
-      if (selected) { slots[k] = selected; selected = null; }
-      else if (slots[k]) slots[k] = null;
-      else return;
-      render(state);
+      if (selected) placeInSlot(k, selected);
+      else if (slots[k]) { slots[k] = null; render(state); }
     });
   });
 
@@ -376,15 +397,14 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
     shakeTimers[id] = setTimeout(() => el.classList.remove('shake'), 500);
   }
 
-  $('chest').addEventListener('click', e => {
-    const el = e.target.closest('[data-slot]');
-    if (!el || !selected) return;
+  // Shared by click (select-then-click) and drop.
+  function tryInstall(el, item) {
     const slot = el.getAttribute('data-slot');
-    const r = install(state, selected, slot);
+    const r = install(state, item, slot);
     lastNew = null;
     if (!r.ok) {
       shake(el);
-      message = state.installed[selected] ? ITEMS[selected].name + ' is already installed.'
+      message = state.installed[item] ? ITEMS[item].name + ' is already installed.'
         : 'The ' + ITEMS[slot].name + ' socket refuses that.';
       render(state);
       return;
@@ -393,7 +413,39 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
     if (r.state.finished) { finishedThisSession = true; message = 'The last part clicks home…'; }
     else message = ITEMS[slot].name + ' clicks into place.';
     dispatch(r.state);
+  }
+
+  $('chest').addEventListener('click', e => {
+    const el = e.target.closest('[data-slot]');
+    if (el && selected) tryInstall(el, selected);
   });
+
+  // ----- Drag-and-drop: same effect as select-then-click -----
+  $('shelf').addEventListener('dragstart', e => {
+    const b = e.target.closest && e.target.closest('[data-item]');
+    if (!b) return;
+    e.dataTransfer.setData('text/plain', b.getAttribute('data-item'));
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+
+  function droppedItem(e) {
+    const id = e.dataTransfer ? e.dataTransfer.getData('text/plain') : '';
+    return state.discovered.includes(id) ? id : null;
+  }
+
+  function makeDropTarget(el, onDrop) {
+    el.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; el.classList.add('drop-over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('drop-over'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('drop-over');
+      const id = droppedItem(e);
+      if (id) onDrop(id);
+    });
+  }
+
+  ['a', 'b'].forEach(k => makeDropTarget($('slot-' + k), id => placeInSlot(k, id)));
+  document.querySelectorAll('#chest [data-slot]').forEach(el => makeDropTarget(el, id => tryInstall(el, id)));
 
   $('play-again').addEventListener('click', () => {
     clearSave();
