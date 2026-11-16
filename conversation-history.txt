@@ -1,0 +1,138 @@
+CONVERSATION HISTORY - Artificial Heart Crafting Game
+Started: 2026-11-16
+======================================================
+
+[USER]
+Use the superpowers skill to help me build a game about crafting an artificial
+heart. Base it on an index.html file in this repository.
+
+[CLAUDE]
+Checked the repo: it's empty (no commits, no index.html). Took "base it on an
+index.html" to mean the whole game lives in a single index.html that opens in a
+browser with no build step.
+Asked: Who is this game for, and what do you want them to take away from it?
+(Educational/realistic anatomy vs. fanciful/for fun.)
+
+[USER]
+This is mainly for fun to turn in as a project, so the fanciful sounds good.
+
+[CLAUDE]
+Offered three directions for what "crafting" feels like:
+  1. Alchemy discovery - combine ingredients to discover parts, assemble a heart.
+  2. Assembly puzzle - place chambers/valves/pipes on a grid so flow loops.
+  3. Workshop under pressure - timed patient, gather/craft/install.
+Recommended #1. Asked about any assignment requirements (deadline, features,
+length).
+
+[USER]
+Option 1.
+
+[CLAUDE]
+Played back the proposed game:
+  - Premise: apprentice in a clockwork alchemist's workshop; a mechanical
+    companion on the bench needs a heart.
+  - Start with 4 ingredients: Brass, Ember, Quicksilver, Moth Wing.
+  - Combine two in the crucible; real recipes add a new item, duds puff smoke.
+  - ~20 recipes, tracked in a Recipe Book (e.g. "9 / 20").
+  - Companion's chest has 5 slots: two chambers, a valve, a spark core,
+    a rhythm spring. Filling all 5 makes the heart thump and the companion wake.
+  - Riddle-style hints after repeated failed tries.
+  - Progress saved in the browser; ~15-20 minutes to finish.
+  - Three-panel layout: Shelf | Crucible | Companion.
+Asked what's wrong or missing (premise, length).
+
+[USER]
+Also, maintain a .txt file of our conversation history in this directory.
+
+[CLAUDE]
+Created this file (conversation-history.txt) and will keep appending to it.
+Laid out build approaches (see next entry).
+
+[CLAUDE]
+No changes requested to the game playback, so treating it as the working design.
+Build approaches for the single index.html:
+  A. Plain HTML/CSS/JavaScript with inline SVG art (RECOMMENDED) - no
+     libraries, works offline, click-to-select plus drag-and-drop, easy for a
+     grader to open and read.
+  B. HTML canvas drawing everything by hand - more freedom for animation,
+     but much more code for buttons/text/layout.
+  C. A game framework (e.g. Phaser) loaded from a CDN - built for action
+     games, overkill here, and needs internet to run.
+Going with A unless the user objects; next step is writing the design doc.
+
+[USER]
+Sounds good. Build A.
+(Mid-turn) I plan to host the final things in GitHub Pages.
+
+[CLAUDE]
+Noted GitHub Pages hosting: single index.html at repo root, inline CSS/JS,
+relative paths only, no build step - plan A fits this directly.
+Wrote the design doc: docs/superpowers/specs/2026-11-16-tin-heart-design.md
+  - Title: The Tin Heart
+  - Full 20-recipe tree from Brass/Ember/Quicksilver/Moth Wing to the 5 heart
+    parts (Left Chamber, Right Chamber, Flutter Valve, Spark Core, Rhythm
+    Spring) plus 2 side discoveries (Ash, Firefly).
+  - Items are never used up; order-independent recipes; hints after 3 fails.
+  - localStorage save with try/catch; Play again resets.
+  - Optional Web Audio sound with mute toggle.
+Sent the doc to a reviewer (fresh builder) to flag open questions before
+handing it over for approval.
+
+[CLAUDE]
+Flagged that GitHub Pages publishes the whole repo, including this log and
+the design doc, and that the repo typically must be public.
+
+[USER]
+It's fine for the log to be public.
+
+[CLAUDE]
+Keeping the log in the repo. Waiting on the design reviewer.
+
+[CLAUDE]
+Reviewer came back. Folded small calls into the design doc (installed parts
+stay on the shelf greyed out; re-combining a known pair doesn't count toward
+hints; reloading after the ending shows the beating heart without replaying
+it; user pushes to GitHub and turns on Pages).
+Asked the user the one open question: what the class assignment requires
+(deadline, rubric, required deliverables like a README or AI-use disclosure).
+
+[USER]
+This is just to demonstrate the usefulness of Claude Code, specifically with
+superpowers and playwright.
+
+[CLAUDE]
+Updated the design doc for the demo purpose: no rubric/deadline; the process
+should leave visible evidence. Added a committed Playwright test suite
+(load, combine, dud, reversed order, hints, slot rejection, reload/save, full
+playthrough, phone-width playthrough, recipe-graph checks), live Playwright
+browser checks with screenshots in docs/screenshots/, and a README explaining
+how it was built. Handed the design doc to the user for approval.
+
+[USER]
+Yes (approved the design doc).
+
+[CLAUDE]
+Marked the design doc approved. Moving on to writing the step-by-step build
+plan (superpowers:writing-plans).
+
+[CLAUDE]
+Wrote the implementation plan: docs/superpowers/plans/2026-11-16-tin-heart.md
+  6 tasks, each test-first with Playwright:
+    1. Scaffolding, recipe data, recipe-graph tests
+    2. Pure game logic + save/load (hints, install rules, corrupted saves)
+    3. Workshop UI: shelf, crucible, recipe book, hints
+    4. Companion chest, installing parts, ending, reload, blocked storage
+    5. Drag-and-drop, phone-width playthrough, file:// support
+    6. Art/sound polish, live Playwright browser check + screenshots, README
+  Work goes on a branch named tin-heart.
+Asked the user to review the plan and pick an execution approach
+(subagent-driven vs. native).
+
+[USER]
+Subagent-driven. Build. Also you can use main as the repo was made just for
+this.
+
+[CLAUDE]
+Updated the plan to work directly on main. Starting subagent-driven
+development: a fresh implementer per task, then an independent review of
+each task before moving on.
