@@ -4,8 +4,48 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Tin Heart</title>
+<style>
+:root{--wood:#2b1b12;--wood2:#3d2819;--panel:#4a3120;--brass:#c9a24a;--copper:#b8683a;--ember:#ff8a2a;--ink:#f3e3c3;--muted:#b9a27c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--wood);color:var(--ink);font-family:Georgia,'Times New Roman',serif}
+header{display:flex;justify-content:space-between;align-items:baseline;padding:14px 24px;border-bottom:3px solid var(--copper);background:var(--wood2)}
+h1{margin:0;font-size:1.6rem;color:var(--brass)}
+#found-count{color:var(--ember);font-weight:bold}
+main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px}
+.panel{background:var(--panel);border:2px solid var(--brass);border-radius:10px;padding:14px;min-height:300px}
+.panel h2{margin:0 0 10px;font-size:1.05rem;color:var(--brass)}
+#shelf-items{display:flex;flex-wrap:wrap;gap:8px}
+#shelf button{display:flex;align-items:center;gap:6px;background:var(--wood2);color:var(--ink);border:2px solid var(--copper);border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer}
+#shelf button.selected{border-color:var(--ember);box-shadow:0 0 8px var(--ember)}
+#shelf button.installed{opacity:.45;filter:grayscale(1)}
+#shelf button.glow{animation:glow 1.2s ease-out}
+@keyframes glow{0%{box-shadow:0 0 0 var(--ember)}40%{box-shadow:0 0 18px 6px var(--ember)}100%{box-shadow:0 0 0 transparent}}
+#crucible{text-align:center;position:relative}
+#slots{display:flex;gap:12px;justify-content:center;margin:12px 0}
+.slot{width:110px;height:80px;border:2px dashed var(--brass);border-radius:10px;background:var(--wood);color:var(--ink);font:inherit;cursor:pointer}
+.slot[data-filled]{border-style:solid;border-color:var(--ember)}
+#combine{background:var(--copper);color:var(--ink);border:0;border-radius:8px;padding:8px 22px;font:inherit;cursor:pointer}
+#combine:disabled{opacity:.4;cursor:not-allowed}
+#message{min-height:2.6em;margin:10px 0;font-style:italic}
+#hint{background:var(--wood);border-left:4px solid var(--ember);padding:8px 10px;margin:10px 0;text-align:left}
+#recipe-book{text-align:left;padding-left:22px;font-size:.9rem;color:var(--muted)}
+#crucible.smoke::after{content:'';position:absolute;left:50%;top:30%;width:60px;height:60px;margin-left:-30px;border-radius:50%;background:radial-gradient(#999,transparent 70%);animation:smoke .8s ease-out forwards;pointer-events:none}
+@keyframes smoke{from{opacity:.9;transform:translateY(0) scale(.6)}to{opacity:0;transform:translateY(-60px) scale(2)}}
+</style>
 </head>
 <body>
+<header><h1>The Tin Heart</h1><div id="found-count">0 / 20</div></header>
+<main>
+<section id="shelf" class="panel"><h2>Shelf</h2><div id="shelf-items"></div></section>
+<section id="crucible" class="panel"><h2>Crucible</h2>
+<div id="slots"><button type="button" class="slot" id="slot-a"></button><button type="button" class="slot" id="slot-b"></button></div>
+<button type="button" id="combine" disabled>Combine</button>
+<div id="message"></div>
+<div id="hint" hidden></div>
+<h2>Recipe Book</h2><ol id="recipe-book"></ol>
+</section>
+<section id="companion-panel" class="panel"></section>
+</main>
 <script>
 (function () {
   'use strict';
@@ -166,6 +206,106 @@
   window.TinHeart = { ITEMS, RECIPES, STARTING_ITEMS, HEART_SLOTS, findRecipe,
     newState, combine, install, foundCount, pickHint, saveState, loadState, clearSave };
   // ===== END LOGIC =====
+
+  // ===== DOM LAYER: render, dispatch, event handlers =====
+  const $ = id => document.getElementById(id);
+  const KIND_STYLE = { base: ['#c9a24a', 'circle'], material: ['#b8683a', 'diamond'], part: ['#ff8a2a', 'square'], side: ['#8a8a8a', 'triangle'] };
+  const SHAPES = {
+    circle: '<circle cx="9" cy="9" r="7"/>',
+    diamond: '<path d="M9 1 17 9 9 17 1 9z"/>',
+    square: '<rect x="2" y="2" width="14" height="14" rx="3"/>',
+    triangle: '<path d="M9 2 17 16H1z"/>'
+  };
+  function glyph(id) {
+    const k = KIND_STYLE[ITEMS[id].kind];
+    return '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="' + k[0] + '" stroke="#2b1b12">' + SHAPES[k[1]] + '</svg>';
+  }
+
+  let state = loadState() || newState();
+  let selected = null;
+  let slots = { a: null, b: null };
+  let message = '';
+  let lastNew = null;
+  let smokeTimer = null;
+
+  function render(s) {
+    const shelf = $('shelf-items');
+    shelf.innerHTML = '';
+    s.discovered.forEach(id => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('data-item', id);
+      if (selected === id) b.classList.add('selected');
+      if (s.installed[id]) { b.classList.add('installed'); b.title = 'Installed'; }
+      if (lastNew === id) b.classList.add('glow');
+      b.innerHTML = glyph(id) + '<span></span>';
+      b.lastChild.textContent = ITEMS[id].name;
+      shelf.appendChild(b);
+    });
+    $('found-count').textContent = foundCount(s) + ' / ' + RECIPES.length;
+    ['a', 'b'].forEach(k => {
+      const el = $('slot-' + k);
+      if (slots[k]) { el.setAttribute('data-filled', slots[k]); el.textContent = ITEMS[slots[k]].name; }
+      else { el.removeAttribute('data-filled'); el.textContent = ''; }
+    });
+    $('combine').disabled = !(slots.a && slots.b);
+    $('message').textContent = message;
+    const hint = $('hint');
+    if (s.hint) { hint.textContent = s.hint; hint.hidden = false; } else { hint.textContent = ''; hint.hidden = true; }
+    const book = $('recipe-book');
+    book.innerHTML = '';
+    RECIPES.filter(r => s.discovered.includes(r.result)).forEach(r => {
+      const li = document.createElement('li');
+      li.textContent = ITEMS[r.a].name + ' + ' + ITEMS[r.b].name + ' → ' + ITEMS[r.result].name;
+      book.appendChild(li);
+    });
+  }
+
+  function dispatch(next) {
+    state = next;
+    saveState(state);
+    render(state);
+  }
+
+  $('shelf').addEventListener('click', e => {
+    const b = e.target.closest('[data-item]');
+    if (!b) return;
+    const id = b.getAttribute('data-item');
+    selected = selected === id ? null : id;
+    lastNew = null;
+    render(state);
+  });
+
+  ['a', 'b'].forEach(k => {
+    $('slot-' + k).addEventListener('click', () => {
+      if (selected) { slots[k] = selected; selected = null; }
+      else if (slots[k]) slots[k] = null;
+      else return;
+      render(state);
+    });
+  });
+
+  $('combine').addEventListener('click', () => {
+    if (!slots.a || !slots.b) return;
+    const r = combine(state, slots.a, slots.b);
+    slots = { a: null, b: null };
+    lastNew = null;
+    if (r.outcome === 'new') { lastNew = r.result; message = ITEMS[r.result].flavor; }
+    else if (r.outcome === 'known') message = 'You already know that one: ' + ITEMS[r.result].name + '.';
+    else message = 'Nothing happens, but the crucible sends up a puff of smoke.';
+    if (r.outcome === 'dud') {
+      const c = $('crucible');
+      c.classList.remove('smoke');
+      void c.offsetWidth;
+      c.classList.add('smoke');
+      clearTimeout(smokeTimer);
+      smokeTimer = setTimeout(() => c.classList.remove('smoke'), 800);
+    }
+    dispatch(r.state);
+  });
+
+  render(state);
+  // ===== END DOM LAYER =====
 })();
 </script>
 </body>
