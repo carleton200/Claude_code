@@ -23,11 +23,29 @@ test.describe('companion', () => {
 
   test('wrong part is rejected with a shake', async ({ page }) => {
     await craftLeftChamber(page);
-    await page.locator('#shelf [data-item="left_chamber"]').click();
-    await page.locator('#chest [data-slot="right_chamber"]').click();
     const slot = page.locator('#chest [data-slot="right_chamber"]');
+    await page.locator('#shelf [data-item="left_chamber"]').dragTo(slot);
     await expect(slot).toHaveClass(/shake/);
     await expect(slot).not.toHaveAttribute('data-installed', /.+/);
+  });
+
+  test('one click on a crafted heart part installs it', async ({ page }) => {
+    await craftLeftChamber(page);
+    await page.locator('#shelf [data-item="left_chamber"]').click();
+    await expect(page.locator('#chest [data-slot="left_chamber"]')).toHaveAttribute('data-installed', 'left_chamber');
+    await expect(page.locator('#slot-a')).not.toHaveAttribute('data-filled', /.+/);
+  });
+
+  test('clicking an installed part says already installed', async ({ page }) => {
+    await craftLeftChamber(page);
+    const part = page.locator('#shelf [data-item="left_chamber"]');
+    await part.click();
+    await expect(page.locator('#chest [data-slot="left_chamber"]')).toHaveAttribute('data-installed', 'left_chamber');
+    await part.click();
+    await expect(page.locator('#message')).toContainText('already installed');
+    await expect(page.locator('#slot-a')).not.toHaveAttribute('data-filled', /.+/);
+    await expect(page.locator('#slot-b')).not.toHaveAttribute('data-filled', /.+/);
+    await expect(page.locator('#chest [data-installed]')).toHaveCount(1);
   });
 
   test('correct part installs and greys out on the shelf', async ({ page }) => {

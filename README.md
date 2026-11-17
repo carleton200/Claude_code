@@ -19,9 +19,11 @@ straight from disk.
 
 ![A fresh game: four starting items on the Shelf](docs/screenshots/01-start.png)
 
-1. **Pick two items.** Click an item on the **Shelf**, then click a crucible
-   slot. You can also drag the item onto the slot. Do the same for the
-   second slot.
+1. **Pick two items.** Click an item on the **Shelf** and it drops into the
+   first empty crucible slot. Click a second item to fill the other slot
+   (click the same item twice to combine it with itself). If both slots are
+   full, a new click replaces the second one. Click a filled slot to empty
+   it. You can also drag an item onto either slot.
 2. **Press Combine.** If the pair is a recipe, a new item appears on the
    Shelf and the recipe is written in the **Recipe Book**. If it isn't, the
    crucible puffs smoke. Items are never used up, order doesn't matter, and
@@ -29,9 +31,9 @@ straight from disk.
 3. **Stuck?** After three duds in a row, a hint appears that points toward a
    useful recipe.
 4. **Build the heart.** Craft the Left Chamber, Right Chamber, Flutter Valve,
-   Spark Core and Rhythm Spring. Select each part and click (or drop it on)
-   its matching socket in the companion's chest. A wrong part is rejected
-   with a shake.
+   Spark Core and Rhythm Spring. Click a finished part once and it clicks
+   into its socket in the companion's chest. You can also drag it onto a
+   socket, where a wrong part is rejected with a shake.
 5. **Bring it to life.** When all five parts are installed, the heart thumps
    and the companion's eyes light up.
 

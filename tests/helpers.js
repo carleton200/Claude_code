@@ -2,15 +2,12 @@ const { expect } = require('@playwright/test');
 
 async function combineVia(page, a, b) {
   await page.locator(`#shelf [data-item="${a}"]`).click();
-  await page.locator('#slot-a').click();
   await page.locator(`#shelf [data-item="${b}"]`).click();
-  await page.locator('#slot-b').click();
   await page.locator('#combine').click();
 }
 
 async function installVia(page, part) {
   await page.locator(`#shelf [data-item="${part}"]`).click();
-  await page.locator(`#chest [data-slot="${part}"]`).click();
 }
 
 const PLAYTHROUGH = [

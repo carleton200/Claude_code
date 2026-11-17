@@ -17,7 +17,6 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 .panel h2{margin:0 0 10px;font-size:1.05rem;color:var(--brass)}
 #shelf-items{display:flex;flex-wrap:wrap;gap:8px}
 #shelf button{display:flex;align-items:center;gap:6px;background:var(--wood2);color:var(--ink);border:2px solid var(--copper);border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer}
-#shelf button.selected{border-color:var(--ember);box-shadow:0 0 8px var(--ember)}
 #shelf button.installed{opacity:.45;filter:grayscale(1)}
 #shelf button.glow{animation:glow 1.2s ease-out}
 @keyframes glow{0%{box-shadow:0 0 0 var(--ember)}40%{box-shadow:0 0 18px 6px var(--ember)}100%{box-shadow:0 0 0 transparent}}
@@ -346,7 +345,6 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
   }
 
   let state = loadState() || newState();
-  let selected = null;
   let slots = { a: null, b: null };
   let message = '';
   let lastNew = null;
@@ -422,7 +420,6 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
       b.type = 'button';
       b.setAttribute('data-item', id);
       b.draggable = true;
-      if (selected === id) b.classList.add('selected');
       if (s.installed[id]) { b.classList.add('installed'); b.title = 'Installed'; }
       if (glowId === id) b.classList.add('glow');
       b.innerHTML = glyph(id) + '<span></span>';
@@ -467,26 +464,33 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
     render(state);
   }
 
+  // One click: an uninstalled heart part installs itself; an installed one is refused;
+  // anything else fills the first empty crucible slot (or replaces slot B when both are full).
   $('shelf').addEventListener('click', e => {
     const b = e.target.closest('[data-item]');
     if (!b) return;
     const id = b.getAttribute('data-item');
-    selected = selected === id ? null : id;
     lastNew = null;
-    render(state);
+    if (state.installed[id]) {
+      message = ITEMS[id].name + ' is already installed.';
+      render(state);
+      return;
+    }
+    const socket = HEART_SLOTS.includes(id) && document.querySelector('#chest [data-slot="' + id + '"]');
+    if (socket) tryInstall(socket, id);
+    else placeInSlot(slots.a ? 'b' : 'a', id);
   });
 
-  // Shared by click (select-then-click) and drop.
+  // Shared by click and drop.
   function placeInSlot(k, id) {
     slots[k] = id;
-    selected = null;
     render(state);
   }
 
+  // Clicking a filled slot empties it; an empty slot ignores clicks.
   ['a', 'b'].forEach(k => {
     $('slot-' + k).addEventListener('click', () => {
-      if (selected) placeInSlot(k, selected);
-      else if (slots[k]) { slots[k] = null; render(state); }
+      if (slots[k]) { slots[k] = null; render(state); }
     });
   });
 
@@ -519,7 +523,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
     shakeTimers[id] = setTimeout(() => el.classList.remove('shake'), 500);
   }
 
-  // Shared by click (select-then-click) and drop.
+  // Shared by click (one click on a heart part) and drop.
   function tryInstall(el, item) {
     const slot = el.getAttribute('data-slot');
     const r = install(state, item, slot);
@@ -531,19 +535,13 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
       render(state);
       return;
     }
-    selected = null;
     play(r.state.finished ? 'thump' : 'clunk');
     if (r.state.finished) { finishedThisSession = true; message = 'The last part clicks home…'; }
     else message = ITEMS[slot].name + ' clicks into place.';
     dispatch(r.state);
   }
 
-  $('chest').addEventListener('click', e => {
-    const el = e.target.closest('[data-slot]');
-    if (el && selected) tryInstall(el, selected);
-  });
-
-  // ----- Drag-and-drop: same effect as select-then-click -----
+  // ----- Drag-and-drop: drop on a crucible slot or a chest socket -----
   $('shelf').addEventListener('dragstart', e => {
     const b = e.target.closest && e.target.closest('[data-item]');
     if (!b) return;
@@ -572,7 +570,6 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 
   $('play-again').addEventListener('click', () => {
     clearSave();
-    selected = null;
     slots = { a: null, b: null };
     message = '';
     lastNew = null;
