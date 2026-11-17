@@ -238,3 +238,11 @@ Final fix wave committed (f05f0f0): install-hint fallback, no hints after the
 ending, README caption "nine", fixed "Mute" label, inline favicon, test server
 bound to 127.0.0.1 with stricter path checks, and a "first-time visitor starts
 a fresh game" regression test. Suite: 47/47. Scoped re-review in progress.
+Final fix wave re-review: all items addressed. Task 7 (one-click filling and installing) dispatched.
+Task 7 built: commit 84526e4, 50/50 tests passing (one click per ingredient, one click to install, test config now uses 127.0.0.1). Independent review in progress.
+Task 7 review: approved. Live check in the Playwright browser: click Brass,
+click Ember, Combine -> Molten Brass (3 clicks). Final suite on 84526e4:
+50/50 passing.
+Build complete: 7 tasks, each test-first with an independent review, plus a
+final whole-project review and one fix wave. Ready to push to GitHub and
+publish with Pages (user's call).
