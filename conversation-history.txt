@@ -263,3 +263,8 @@ Yes
 Added the "Opening message" section to the design doc (text verbatim) and
 Task 8 to the plan. Building it test-first with a review, then retaking the
 screenshots.
+Task 8 built (commit 61d2bf3) and reviewed: approved. Card text matches the
+approved wording exactly; it blocks the workshop while open, closes on the
+button or Escape, and is skipped when resuming a game. Suite: 56/56.
+Retook all screenshots with the Playwright browser using the one-click flow,
+added 00-opening.png, and referenced every screenshot in the README.

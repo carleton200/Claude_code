@@ -17,7 +17,7 @@ straight from disk.
 
 ## How to play
 
-![A fresh game: four starting items on the Shelf](docs/screenshots/01-start.png)
+![The opening card: "The old clockmaker left one job unfinished."](docs/screenshots/00-opening.png)
 
 A new game opens with a short card that sets the scene: the old
 clockmaker's unfinished companion, the four things left on the shelf, and
@@ -43,7 +43,13 @@ start. The card shows only for a new game, on a first visit or after
 5. **Bring it to life.** When all five parts are installed, the heart thumps
    and the companion's eyes light up.
 
+![A fresh game after closing the card: four starting items on the Shelf](docs/screenshots/01-start.png)
+
 ![Mid-game: nine recipes found, one part installed](docs/screenshots/02-midgame.png)
+
+On a phone the panels stack into one column:
+
+![Phone width: the Shelf as a two-column grid](docs/screenshots/04-phone.png)
 
 Progress saves automatically in your browser. **Play again** starts over.
 Use the **Mute** button in the header to turn sound off or back on. Animations are
@@ -55,7 +61,7 @@ The game is covered by a [Playwright](https://playwright.dev/) suite in
 [`tests/`](tests/). It checks the recipe graph, the pure game logic and
 persistence, the shelf, crucible, recipe book and hints, installing parts, a
 full playthrough to the ending, reloads, blocked storage, drag-and-drop,
-phone-width layout and `file://` loading.
+phone-width layout, `file://` loading and the opening card.
 
 ```bash
 npm install
