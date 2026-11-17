@@ -19,6 +19,12 @@ straight from disk.
 
 ![A fresh game: four starting items on the Shelf](docs/screenshots/01-start.png)
 
+A new game opens with a short card that sets the scene: the old
+clockmaker's unfinished companion, the four things left on the shelf, and
+the basics below. Press **Light the forge** (or Escape) to close it and
+start. The card shows only for a new game, on a first visit or after
+**Play again**. Returning to a game in progress skips it.
+
 1. **Pick two items.** Click an item on the **Shelf** and it drops into the
    first empty crucible slot. Click a second item to fill the other slot
    (click the same item twice to combine it with itself). If both slots are

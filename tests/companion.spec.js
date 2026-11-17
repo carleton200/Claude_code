@@ -1,11 +1,12 @@
 const { test, expect } = require('@playwright/test');
-const { combineVia, installVia, playToEnd } = require('./helpers');
+const { combineVia, installVia, dismissIntro, playToEnd } = require('./helpers');
 
 test.describe('companion', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
     await page.reload();
+    await dismissIntro(page);
   });
 
   async function craftLeftChamber(page) {
@@ -100,6 +101,8 @@ test.describe('blocked storage', () => {
     });
     const errors = []; page.on('pageerror', e => errors.push(e));
     await page.goto('/');
+    // Storage throws, so every load is a new game and the opening card shows each time.
+    await dismissIntro(page);
     await combineVia(page, 'brass', 'ember');
     await expect(page.locator('#found-count')).toHaveText('1 / 20');
     expect(errors).toEqual([]);

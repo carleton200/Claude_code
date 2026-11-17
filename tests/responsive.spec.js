@@ -1,10 +1,11 @@
 const { test, expect } = require('@playwright/test');
-const { combineVia, playToEnd } = require('./helpers');
+const { combineVia, dismissIntro, playToEnd } = require('./helpers');
 
 async function resetStorage(page) {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  await dismissIntro(page);
 }
 
 test('drag-and-drop combines and installs', async ({ page }) => {
@@ -52,6 +53,7 @@ test('works when opened from file://', async ({ page }) => {
   await page.goto(url);
   await page.evaluate(() => { try { localStorage.clear(); } catch (e) { /* file:// storage may be blocked */ } });
   await page.reload();
+  await dismissIntro(page);
   await combineVia(page, 'brass', 'ember');
   await expect(page.locator('#found-count')).toHaveText('1 / 20');
 });

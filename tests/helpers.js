@@ -10,6 +10,12 @@ async function installVia(page, part) {
   await page.locator(`#shelf [data-item="${part}"]`).click();
 }
 
+// Closes the opening card if it is showing; does nothing otherwise.
+async function dismissIntro(page) {
+  if (await page.locator('#intro').isVisible()) await page.locator('#intro-start').click();
+  await expect(page.locator('#intro')).toBeHidden();
+}
+
 const PLAYTHROUGH = [
   ['brass', 'ember'], ['brass', 'brass'], ['molten_brass', 'gear'], ['ember', 'quicksilver'],
   ['living_vapor', 'moth_wing'], ['cog_shell', 'breath'], ['cog_shell', 'living_vapor'],
@@ -26,4 +32,4 @@ async function playToEnd(page, { combine = combineVia, install = installVia } = 
   }
 }
 
-module.exports = { combineVia, installVia, PLAYTHROUGH, playToEnd, expect };
+module.exports = { combineVia, installVia, dismissIntro, PLAYTHROUGH, playToEnd, expect };

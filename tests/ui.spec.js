@@ -1,11 +1,12 @@
 const { test, expect } = require('@playwright/test');
-const { combineVia } = require('./helpers');
+const { combineVia, dismissIntro } = require('./helpers');
 
 test.describe('workshop', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
     await page.reload();
+    await dismissIntro(page);
   });
 
   test('starts with 4 shelf items and 0 / 20', async ({ page }) => {
@@ -106,5 +107,6 @@ test.describe('first visit', () => {
     await expect(page.locator('#recipe-book li')).toHaveCount(0);
     await expect(page.locator('#ending')).toBeHidden();
     await expect(page.locator('#companion')).not.toHaveClass(/\balive\b/);
+    await expect(page.locator('#intro')).toBeVisible();
   });
 });
