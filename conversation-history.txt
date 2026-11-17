@@ -182,3 +182,59 @@ Live Playwright check (Claude, via the Playwright browser tool): played the
 game from a fresh start to the ending at 1280x800, then checked phone width
 (375px). No console errors except a missing favicon.ico. Saved screenshots:
 docs/screenshots/01-start.png, 02-midgame.png, 03-ending.png, 04-phone.png.
+All 6 tasks complete. Final whole-project review (Opus) in progress over all commits.
+
+[USER]
+Open it in playwright for me right now
+
+[CLAUDE]
+Started the local server (http://localhost:4173/) and opened The Tin Heart in the Playwright browser on a fresh game (0 / 20).
+
+[CLAUDE]
+Final whole-project review (Opus): "With fixes". No critical issues; 44/44
+tests passing; clean layering, XSS-safe, safe save loading, works on the
+GitHub Pages subpath and from file://.
+  Important: once every heart part is crafted but not installed, the hint
+  could point at side recipes (Ash/Firefly) instead of "install your parts".
+  Minor: README caption said "eight" recipes, screenshot shows nine; mute
+  button double-negative label; favicon 404; test server should bind to
+  localhost only; plus optional polish (phone scrolling, keyboard focus,
+  visible "installed" tag, Firefox/Safari check).
+Dispatched one fix agent for: the hint fallback, the caption, the mute label,
+the favicon, no hints after the ending, and test-server hardening.
+
+[USER]
+It opened to the full recipe book in a completed state. Make sure it will not
+do that when deployed.
+
+[CLAUDE]
+Cause: Claude's own screenshot playthrough finished the game in that same
+Playwright browser, and the game saves progress in browser storage, so the
+page resumed that finished save. Nothing is stored in index.html.
+Verified with brand-new browser profiles (no clearing) over both
+http://localhost:4173/ and file://: 0 / 20, 4 shelf items, empty recipe
+book, ending hidden, no save. GitHub Pages is a different origin from
+localhost, so local test saves can't carry over.
+Asked the fix agent to add a "first-time visitor starts a fresh game"
+regression test.
+
+[USER]
+Is there a way to do it without having to drag every ingredient every time?
+
+[CLAUDE]
+Proposed: one click per ingredient (a shelf click fills the next empty
+crucible slot), one click to install (a click on a crafted heart part sends
+it straight to its socket); dragging still works; Combine button stays.
+This changes the approved click behavior, so asked to confirm.
+
+[USER]
+yes, do one-click filling and installing
+
+[CLAUDE]
+Recorded the decision in the design doc (Core loop items 2 and 6) and added
+Task 7 to the plan. It will run after the current fix wave lands, test-first
+with a review, like the other tasks.
+Final fix wave committed (f05f0f0): install-hint fallback, no hints after the
+ending, README caption "nine", fixed "Mute" label, inline favicon, test server
+bound to 127.0.0.1 with stricter path checks, and a "first-time visitor starts
+a fresh game" regression test. Suite: 47/47. Scoped re-review in progress.

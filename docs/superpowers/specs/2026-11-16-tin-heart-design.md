@@ -26,8 +26,11 @@ it a heart.
 **Core loop (alchemy discovery).**
 1. The **Shelf** holds every item you've discovered. You start with 4:
    **Brass, Ember, Quicksilver, Moth Wing**.
-2. Put two items into the **Crucible**, by clicking/tapping an item then a
-   crucible slot or by dragging, and press **Combine**.
+2. Put two items into the **Crucible** and press **Combine**. **One click per
+   ingredient** (user decision, 2026-11-17): clicking/tapping a shelf item drops
+   it into the first empty crucible slot (A, then B). If both slots are full,
+   it replaces slot B. Clicking a filled slot empties it. Dragging an item onto
+   a slot still works.
 3. If the pair is a recipe, the result is added to the Shelf with a short
    flourish (glow plus a one-line flavor text). If it's already known, the
    crucible says so and adds nothing. A non-recipe gives a puff of smoke and a
@@ -37,9 +40,13 @@ it a heart.
    itself (Brass + Brass).
 5. The **Recipe Book** lists the recipes you've found and shows "found / 20".
 6. The companion's chest has **5 slots**: Left Chamber, Right Chamber, Flutter
-   Valve, Spark Core and Rhythm Spring. You install a crafted heart part by
-   moving it from the Shelf onto its slot (click-then-slot or drag). A slot
-   only takes its matching part. A wrong part is rejected with a little shake.
+   Valve, Spark Core and Rhythm Spring. **One click to install** (user
+   decision, 2026-11-17): clicking an uninstalled heart part on the Shelf
+   installs it straight into its own slot. No recipe uses a heart part as an
+   ingredient, so the click is never ambiguous. Dragging a part onto a slot
+   still works. A slot only takes its matching part, and a wrong part dragged
+   onto it is rejected with a little shake. Clicking an installed part does
+   nothing except show a short "already installed" message.
 7. Once all 5 are installed: the heart thumps, the companion's eyes light up,
    a short ending text plays, and a **Play again** button resets the run.
 
@@ -181,7 +188,8 @@ The user picked A.
   so everything gets committed. Pushing to GitHub and turning on Pages are the
   user's steps. The plan will include short instructions for them.
 - **Installed parts** stay on the Shelf, marked "installed" and greyed out.
-  They can't be installed twice, but can still be combined.
+  They can't be installed twice. (Since one-click installing, they can only
+  be put in the crucible by dragging. No recipe uses them, so nothing is lost.)
 - **Re-combining a known pair** doesn't count as a failure for the hint
   counter.
 - **Reloading after the ending** shows the finished, beating companion and the
