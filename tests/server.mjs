@@ -14,15 +14,16 @@ const types = {
 
 http.createServer((req, res) => {
   let urlPath;
-  try { urlPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname); }
+  // Decode first, so %2E / %5C escapes cannot sneak past the '..' check below.
+  try { urlPath = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname); }
   catch { res.writeHead(400); return res.end('Bad request'); }
-  if (urlPath.split(/[\/]/).includes('..')) { res.writeHead(403); return res.end('Forbidden'); }
+  if (urlPath.includes('\0') || urlPath.split(/[\\/]/).includes('..')) { res.writeHead(403); return res.end('Forbidden'); }
   if (urlPath.endsWith('/')) urlPath += 'index.html';
-  const file = path.join(root, urlPath);
-  if (!file.startsWith(root)) { res.writeHead(403); return res.end('Forbidden'); }
+  const file = path.resolve(root, '.' + urlPath);
+  if (file !== root && !file.startsWith(root + path.sep)) { res.writeHead(403); return res.end('Forbidden'); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
     res.end(data);
   });
-}).listen(4173, () => console.log('Serving on http://localhost:4173/'));
+}).listen(4173, '127.0.0.1', () => console.log('Serving on http://127.0.0.1:4173/'));

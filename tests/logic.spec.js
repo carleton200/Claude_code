@@ -148,6 +148,27 @@ test('pickHint when nothing new is craftable but parts are uninstalled', async (
   expect(hint).toContain('install');
 });
 
+test('pickHint points to install when only side recipes remain and parts are uninstalled', async ({ page }) => {
+  await page.goto('/');
+  const hint = await page.evaluate((ALL) => {
+    const T = window.TinHeart;
+    const discovered = ALL.filter(id => id !== 'ash' && id !== 'firefly');
+    return T.pickHint({ ...T.newState(), discovered, failStreak: 3 });
+  }, ALL);
+  expect(hint).toContain('install');
+});
+
+test('pickHint returns null once the game is finished', async ({ page }) => {
+  await page.goto('/');
+  const hint = await page.evaluate((ALL) => {
+    const T = window.TinHeart;
+    const installed = Object.fromEntries(T.HEART_SLOTS.map(p => [p, p]));
+    const discovered = ALL.filter(id => id !== 'ash' && id !== 'firefly');
+    return T.pickHint({ ...T.newState(), discovered, installed, finished: true, failStreak: 3 });
+  }, ALL);
+  expect(hint).toBeNull();
+});
+
 test('save/load round-trips', async ({ page }) => {
   await page.goto('/');
   const r = await page.evaluate(() => {

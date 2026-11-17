@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Tin Heart</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23b8683a' d='M8 14 2 8a3.2 3.2 0 0 1 6-3.5A3.2 3.2 0 0 1 14 8z'/%3E%3C/svg%3E">
 <style>
 :root{--wood:#2b1b12;--wood2:#3d2819;--panel:#4a3120;--brass:#c9a24a;--copper:#b8683a;--ember:#ff8a2a;--ink:#f3e3c3;--muted:#b9a27c}
 *{box-sizing:border-box}
@@ -58,7 +59,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 #shelf .glyph{flex:0 0 auto;filter:drop-shadow(0 1px 0 rgba(0,0,0,.4))}
 .hud{display:flex;align-items:baseline;gap:14px}
 #mute{background:var(--wood);color:var(--muted);border:1px solid var(--copper);border-radius:6px;padding:3px 10px;font:inherit;font-size:.85rem;cursor:pointer}
-#mute[aria-pressed=true]{color:#8a7a62;text-decoration:line-through}
+#mute[aria-pressed=true]{color:var(--ink);background:var(--copper);border-color:var(--brass)}
 #companion .figure{animation:idle 3.2s ease-in-out infinite}
 @keyframes idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 #companion .bulb{animation:flicker 2.6s ease-in-out infinite}
@@ -85,7 +86,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 </style>
 </head>
 <body>
-<header><h1>The Tin Heart</h1><div class="hud"><div id="found-count">0 / 20</div><button type="button" id="mute" aria-pressed="false">Sound</button></div></header>
+<header><h1>The Tin Heart</h1><div class="hud"><div id="found-count">0 / 20</div><button type="button" id="mute" aria-pressed="false">Mute</button></div></header>
 <main>
 <section id="shelf" class="panel"><h2>Shelf</h2><div id="shelf-items"></div></section>
 <section id="crucible" class="panel"><h2>Crucible</h2>
@@ -220,10 +221,13 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
   }
 
   function pickHint(s) {
+    if (s.finished) return null; // the heart beats: nothing left to hint at
     const have = new Set(s.discovered);
     const candidates = RECIPES.filter(r => !have.has(r.result) && have.has(r.a) && have.has(r.b));
     if (!candidates.length) return INSTALL_HINT;
     const useful = candidates.find(r => HEART_SLOTS.some(p => !s.installed[p] && PART_ANCESTORS[p].has(r.result)));
+    // Only side recipes left, but crafted parts still wait in the chest: point there.
+    if (!useful && HEART_SLOTS.some(p => have.has(p) && !s.installed[p])) return INSTALL_HINT;
     return (useful || candidates[0]).hint;
   }
 
@@ -395,8 +399,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
   }
   function renderMute() {
     const m = $('mute');
-    m.setAttribute('aria-pressed', String(muted));
-    m.textContent = muted ? 'Sound off' : 'Sound on';
+    m.setAttribute('aria-pressed', String(muted)); // fixed "Mute" label; pressed = muted
   }
   $('mute').addEventListener('click', () => {
     muted = !muted;

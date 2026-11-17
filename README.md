@@ -35,10 +35,10 @@ straight from disk.
 5. **Bring it to life.** When all five parts are installed, the heart thumps
    and the companion's eyes light up.
 
-![Mid-game: eight recipes found, one part installed](docs/screenshots/02-midgame.png)
+![Mid-game: nine recipes found, one part installed](docs/screenshots/02-midgame.png)
 
 Progress saves automatically in your browser. **Play again** starts over.
-Use the **Sound** button in the header to mute or unmute. Animations are
+Use the **Mute** button in the header to turn sound off or back on. Animations are
 switched off when your system asks for reduced motion.
 
 ## Running the tests
