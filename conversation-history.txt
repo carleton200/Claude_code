@@ -136,3 +136,49 @@ this.
 Updated the plan to work directly on main. Starting subagent-driven
 development: a fresh implementer per task, then an independent review of
 each task before moving on.
+
+[CLAUDE - build progress]
+Initial commit 2bd8a08 (design, plan, log). Task 1 (scaffolding, 20-recipe
+data, recipe-graph tests) built by a subagent: commit e42216e, 5/5 tests
+passing. Independent review of Task 1 in progress.
+Task 1 review: approved (spec compliant, only cosmetic notes).
+Task 2 (game rules + saving) dispatched to a fresh implementer.
+Task 2 built: commit fd3d3d1, 20/20 tests passing. Independent review in progress.
+Task 2 review asked for safer save loading (tampered saves); fix committed c4a0145, 24/24 tests passing. Re-review in progress.
+Task 2 re-review: all findings addressed. Task 2 complete.
+Task 3 (workshop UI: shelf, crucible, recipe book, hints) dispatched.
+Task 3 implementer stalled mid-task (tests written, UI not yet); resumed it.
+Task 3 built after resume: commit 77461dc, 33/33 tests passing. Independent review in progress.
+Task 3 review: approved (minor notes deferred to final review). Task 3 complete.
+Task 4 (companion, installing parts, ending, save/reload) dispatched.
+Task 4 implementer stalled the same way (tests written, before the UI edit); resumed with smaller-edit guidance.
+
+[USER]
+Resume
+
+[CLAUDE]
+Task 4 implementer had made no progress since being resumed; stopped it and handed Task 4 to a fresh implementer on a more capable model (Opus), keeping the tests already written.
+Task 4 built by the fresh Opus implementer in ~5 minutes: commit cd622f3, 41/41 tests passing. Independent review in progress.
+Task 4 review: approved (minor notes deferred). Task 4 complete.
+Task 5 (drag-and-drop, phone-width layout, file:// check) dispatched to an Opus implementer.
+
+[USER]
+keep going
+
+[CLAUDE]
+Task 5 built: commit 0896d27, 44/44 tests passing (drag-and-drop shares code with clicks; single column under 760px; file:// works). Independent review in progress.
+Task 5 review: approved. Task 5 complete.
+Task 6 (art/sound polish, accessibility touches, README) dispatched to an Opus implementer; Claude will do the live Playwright playthrough and screenshots afterward.
+
+[USER]
+keep going
+
+[CLAUDE]
+Task 6 implementer stalled mid-polish. Ran the suite on its work-in-progress: 44/44 pass in 18s, so tests are not the cause. Resumed the implementer to finish the README and commit.
+Task 6 built (commit f969df9): 24 item glyphs, idle/heartbeat animation, Web
+Audio with mute toggle, reduced-motion support, accessibility labels, README.
+Controller re-ran the suite on the commit: 44/44. Task 6 review: approved.
+Live Playwright check (Claude, via the Playwright browser tool): played the
+game from a fresh start to the ending at 1280x800, then checked phone width
+(375px). No console errors except a missing favicon.ico. Saved screenshots:
+docs/screenshots/01-start.png, 02-midgame.png, 03-ending.png, 04-phone.png.
