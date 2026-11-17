@@ -268,3 +268,12 @@ approved wording exactly; it blocks the workshop while open, closes on the
 button or Escape, and is skipped when resuming a game. Suite: 56/56.
 Retook all screenshots with the Playwright browser using the one-click flow,
 added 00-opening.png, and referenced every screenshot in the README.
+
+[USER]
+Push everything to origin
+
+[CLAUDE]
+Pushed main to https://github.com/carleton200/Claude_code (first push; the
+remote was empty). To publish: GitHub -> Settings -> Pages -> Deploy from
+branch main, folder / (root). The game will be at
+https://carleton200.github.io/Claude_code/
