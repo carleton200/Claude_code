@@ -55,6 +55,19 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 #play-again{background:var(--copper);color:var(--ink);border:0;border-radius:8px;padding:8px 22px;font:inherit;cursor:pointer}
 #shelf button[draggable=true]{cursor:grab}
+#shelf .glyph{flex:0 0 auto;filter:drop-shadow(0 1px 0 rgba(0,0,0,.4))}
+.hud{display:flex;align-items:baseline;gap:14px}
+#mute{background:var(--wood);color:var(--muted);border:1px solid var(--copper);border-radius:6px;padding:3px 10px;font:inherit;font-size:.85rem;cursor:pointer}
+#mute[aria-pressed=true]{color:#8a7a62;text-decoration:line-through}
+#companion .figure{animation:idle 3.2s ease-in-out infinite}
+@keyframes idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+#companion .bulb{animation:flicker 2.6s ease-in-out infinite}
+@keyframes flicker{0%,100%{opacity:1}50%{opacity:.6}}
+#companion.alive .figure{animation-duration:1.6s}
+@media (prefers-reduced-motion:reduce){
+  #companion .figure,#companion .bulb,#companion.alive #heart,#shelf button.glow,.chest-slot.shake,#ending.intro{animation:none}
+  #crucible.smoke::after{animation:none;opacity:.35}
+}
 .slot.drop-over,.chest-slot.drop-over{border-style:solid;border-color:var(--ember);box-shadow:0 0 10px var(--ember)}
 @media (max-width:760px){
   header{padding:10px 12px}
@@ -72,13 +85,13 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 </style>
 </head>
 <body>
-<header><h1>The Tin Heart</h1><div id="found-count">0 / 20</div></header>
+<header><h1>The Tin Heart</h1><div class="hud"><div id="found-count">0 / 20</div><button type="button" id="mute" aria-pressed="false">Sound</button></div></header>
 <main>
 <section id="shelf" class="panel"><h2>Shelf</h2><div id="shelf-items"></div></section>
 <section id="crucible" class="panel"><h2>Crucible</h2>
 <div id="slots"><button type="button" class="slot" id="slot-a"></button><button type="button" class="slot" id="slot-b"></button></div>
 <button type="button" id="combine" disabled>Combine</button>
-<div id="message"></div>
+<div id="message" aria-live="polite"></div>
 <div id="hint" hidden></div>
 <h2>Recipe Book</h2><ol id="recipe-book"></ol>
 </section>
@@ -106,7 +119,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 <button type="button" class="chest-slot" data-slot="rhythm_spring">Rhythm Spring</button>
 </div>
 </div>
-<div id="ending" hidden>
+<div id="ending" hidden aria-live="polite">
 <p>Tick. Tock. <em>Thump.</em> The little companion blinks its new, glowing eyes, presses a hand to its chest, and listens.</p>
 <p>Somewhere inside the brass, a tin heart is beating. It looks at you as if it has always known you.</p>
 <button type="button" id="play-again">Play again</button>
@@ -276,16 +289,56 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
 
   // ===== DOM LAYER: render, dispatch, event handlers =====
   const $ = id => document.getElementById(id);
-  const KIND_STYLE = { base: ['#c9a24a', 'circle'], material: ['#b8683a', 'diamond'], part: ['#ff8a2a', 'square'], side: ['#8a8a8a', 'triangle'] };
-  const SHAPES = {
-    circle: '<circle cx="9" cy="9" r="7"/>',
-    diamond: '<path d="M9 1 17 9 9 17 1 9z"/>',
-    square: '<rect x="2" y="2" width="14" height="14" rx="3"/>',
-    triangle: '<path d="M9 2 17 16H1z"/>'
+  // One inline-SVG glyph per item id (24x24 viewBox), in the brass/copper/wood/ember palette.
+  const GLYPHS = {
+    brass: '<path d="M3 17 7 8h10l4 9z" fill="#c9a24a" stroke="#6b4426"/><path d="M7.5 9.5h9" stroke="#ffd36b"/>',
+    ember: '<ellipse cx="12" cy="18" rx="8" ry="3.5" fill="#3d2819" stroke="#b8683a"/>'
+      + '<path d="M12 3c3 4 5 6 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3-1-3 0-5 1-8z" fill="#ff8a2a" stroke="#d64b3a"/>',
+    quicksilver: '<path d="M12 3c4 6 6 9 6 12a6 6 0 0 1-12 0c0-3 2-6 6-12z" fill="#cfd6dc" stroke="#6b7680"/>'
+      + '<circle cx="9.5" cy="14" r="1.5" fill="#fff"/>',
+    moth_wing: '<path d="M12 12C8 3 2 4 3 10c1 4 5 4 9 2zM12 12c-3 4-6 8-3 9 2 0 3-4 3-9z" fill="#b9a27c" stroke="#6b4426"/>'
+      + '<circle cx="6.5" cy="8.5" r="1.5" fill="#6b4426"/>',
+    molten_brass: '<path d="M4 9h12l-2 8H6z" fill="#6b4426" stroke="#c9a24a"/><ellipse cx="10" cy="9" rx="6" ry="1.5" fill="#ff8a2a"/>'
+      + '<path d="M16 9c3 0 4 3 4 6v5" stroke="#ff8a2a" stroke-width="2"/>',
+    living_vapor: '<path d="M6 18c-3 0-3-5 0-5 0-4 6-5 7-1 3-2 7 0 6 4 2 1 1 4-1 4z" fill="#e6dccb" stroke="#b9a27c"/>'
+      + '<path d="M9 15.5c1-2 4-2 4 0" stroke="#b8683a"/>',
+    silver_feather: '<path d="M19 3C10 5 5 12 6 20c7-2 13-8 13-17z" fill="#cfd6dc" stroke="#6b7680"/><path d="M4 22 17 6" stroke="#6b7680"/>',
+    gilded_wing: '<path d="M3 18C4 9 11 4 21 4c-2 4-4 6-7 7 2 0 4 0 5 1-3 4-8 6-16 6z" fill="#c9a24a" stroke="#6b4426"/>'
+      + '<path d="M7 15c4-2 7-5 10-9" stroke="#ffd36b"/>',
+    spark: '<path d="m12 2 2 7 7-2-5 5 5 5-7-2-2 7-2-7-7 2 5-5-5-5 7 2z" fill="#ffd36b" stroke="#ff8a2a"/>',
+    gear: '<circle cx="12" cy="12" r="8" stroke="#c9a24a" stroke-width="4" stroke-dasharray="3 2.03" stroke-linecap="butt"/>'
+      + '<circle cx="12" cy="12" r="6" fill="#c9a24a" stroke="#6b4426"/><circle cx="12" cy="12" r="2" fill="#2b1b12"/>',
+    mirror_drop: '<circle cx="12" cy="13" r="7" fill="#cfd6dc" stroke="#6b7680"/>'
+      + '<path d="M8 12a4 4 0 0 1 4-4" stroke="#fff" stroke-width="2"/><circle cx="14.5" cy="15.5" r="1.5" fill="#6b7680"/>',
+    cog_shell: '<path d="m12 3 8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z" fill="#b8683a" stroke="#c9a24a"/>'
+      + '<circle cx="12" cy="12" r="3.5" stroke="#ffd36b" stroke-width="2" stroke-dasharray="2 1.66" stroke-linecap="butt"/>',
+    ticking_gear: '<circle cx="12" cy="12" r="8" stroke="#b8683a" stroke-width="4" stroke-dasharray="3 2.03" stroke-linecap="butt"/>'
+      + '<circle cx="12" cy="12" r="6" fill="#f3e3c3" stroke="#6b4426"/><path d="M12 8v4l3 2" stroke="#2b1b12" stroke-width="1.5"/>',
+    breath: '<path d="M3 9c3-3 6 3 9 0s6-3 9 0M3 14c3-3 6 3 9 0s6-3 9 0M6 19c2-2 4 2 6 0" stroke="#e6dccb" stroke-width="2"/>',
+    flutter_membrane: '<path d="M12 12C9 4 3 4 3 9s5 5 9 3c4 2 9 2 9-3s-6-5-9 3z" fill="#e6dccb" fill-opacity=".55" stroke="#c9a24a"/>'
+      + '<path d="M12 12v8" stroke="#c9a24a"/>',
+    glow_glass: '<circle cx="12" cy="13" r="10.5" fill="#ffd36b" opacity=".2"/><rect x="9" y="3" width="6" height="3" rx="1" fill="#b8683a"/>'
+      + '<circle cx="12" cy="13" r="7" fill="#ffd36b" stroke="#c9a24a"/><circle cx="12" cy="13" r="3" fill="#fff6d6"/>',
+    lightning_bead: '<circle cx="12" cy="12" r="9" fill="#cfd6dc" stroke="#6b7680"/>'
+      + '<path d="m13 5-5 8h4l-1 6 5-8h-4z" fill="#ffd36b" stroke="#ff8a2a" stroke-width=".8"/>',
+    left_chamber: '<path d="M12 21 4 13C0 9 3 3 8 4c2 0 3 1 4 3z" fill="#d64b3a" stroke="#c9a24a"/>'
+      + '<path d="M12 7v14" stroke="#c9a24a" stroke-dasharray="2 1.5"/><circle cx="8" cy="10" r="1.5" fill="#ffd36b"/>',
+    right_chamber: '<path d="m12 21 8-8c4-4 1-10-4-9-2 0-3 1-4 3z" fill="#d64b3a" stroke="#c9a24a"/>'
+      + '<path d="M12 7v14" stroke="#c9a24a" stroke-dasharray="2 1.5"/><circle cx="16" cy="10" r="1.5" fill="#ffd36b"/>',
+    flutter_valve: '<circle cx="12" cy="12" r="9" fill="#6b4426" stroke="#c9a24a" stroke-width="2"/>'
+      + '<path d="M12 12 6.5 7.5M12 12l5.5-4.5M12 12v7" stroke="#ff8a2a" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="#c9a24a"/>',
+    spark_core: '<path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3" stroke="#c9a24a" stroke-width="2"/>'
+      + '<circle cx="12" cy="12" r="5" fill="#ff8a2a" stroke="#ffd36b"/><circle cx="12" cy="12" r="2" fill="#fff6d6"/>',
+    rhythm_spring: '<path d="M5 3h14M5 21h14" stroke="#b8683a" stroke-width="2.5"/>'
+      + '<path d="m12 3 5 3-10 3 10 3-10 3 10 3-5 3" stroke="#c9a24a" stroke-width="2"/>',
+    ash: '<path d="M3 19c2-5 5-7 9-7s7 2 9 7z" fill="#8a8a8a" stroke="#5a5a5a"/>'
+      + '<circle cx="8" cy="8" r="1.2" fill="#8a8a8a"/><circle cx="14" cy="5.5" r="1" fill="#8a8a8a"/><circle cx="12" cy="9" r=".8" fill="#8a8a8a"/>',
+    firefly: '<circle cx="12" cy="16" r="6" fill="#ffd36b" opacity=".3"/><circle cx="12" cy="16" r="3" fill="#ffd36b"/>'
+      + '<ellipse cx="12" cy="9" rx="2.5" ry="4" fill="#3d2819" stroke="#b8683a"/><path d="M10 8C6 4 4 7 6 9M14 8c4-4 6-1 4 1" stroke="#b9a27c"/>'
   };
   function glyph(id) {
-    const k = KIND_STYLE[ITEMS[id].kind];
-    return '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="' + k[0] + '" stroke="#2b1b12">' + SHAPES[k[1]] + '</svg>';
+    return '<svg class="glyph" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke-width="1.2"'
+      + ' stroke-linecap="round" stroke-linejoin="round">' + GLYPHS[id] + '</svg>';
   }
 
   let state = loadState() || newState();
@@ -297,9 +350,70 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
   let finishedThisSession = false;
   const shakeTimers = {};
 
+  // ----- Sound: Web Audio only, AudioContext created lazily on the first user gesture -----
+  const MUTE_KEY = 'tinheart.mute';
+  let muted = false;
+  try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (e) { /* storage unavailable */ }
+  let actx = null;
+  function audio() {
+    if (muted) return null;
+    try {
+      if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; actx = new AC(); }
+      if (actx.state === 'suspended') actx.resume().catch(() => {});
+      return actx;
+    } catch (e) { return null; }
+  }
+  function tone(ac, type, f0, f1, t0, dur, vol) {
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + t0;
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function puff(ac) {
+    const len = Math.floor(ac.sampleRate * 0.4), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = buf; f.type = 'lowpass'; f.frequency.value = 700; g.gain.value = 0.25;
+    src.connect(f).connect(g).connect(ac.destination);
+    src.start();
+  }
+  const SOUNDS = {
+    bubble: ac => { tone(ac, 'sine', 320, 900, 0, 0.12, 0.2); tone(ac, 'sine', 420, 1200, 0.1, 0.12, 0.15); },
+    puff,
+    clunk: ac => tone(ac, 'triangle', 220, 110, 0, 0.15, 0.25),
+    thump: ac => [0, 0.9, 1.8].forEach(t => { tone(ac, 'sine', 70, 40, t, 0.18, 0.6); tone(ac, 'sine', 60, 35, t + 0.22, 0.2, 0.45); })
+  };
+  function play(name) {
+    const ac = audio();
+    if (!ac) return;
+    try { SOUNDS[name](ac); } catch (e) { /* audio is decoration only */ }
+  }
+  function renderMute() {
+    const m = $('mute');
+    m.setAttribute('aria-pressed', String(muted));
+    m.textContent = muted ? 'Sound off' : 'Sound on';
+  }
+  $('mute').addEventListener('click', () => {
+    muted = !muted;
+    try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (e) { /* storage unavailable */ }
+    if (muted && actx) actx.suspend().catch(() => {});
+    else audio(); // creates or resumes the context inside this click gesture
+    renderMute();
+  });
+  // Unlock audio on the first real gesture, so drag-and-drop sounds work too.
+  document.addEventListener('pointerdown', () => { audio(); }, { once: true });
+  renderMute();
+
   function render(s) {
     const shelf = $('shelf-items');
     shelf.innerHTML = '';
+    const glowId = lastNew;
+    lastNew = null; // the discovery glow plays once, not on every later re-render
     s.discovered.forEach(id => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -307,7 +421,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
       b.draggable = true;
       if (selected === id) b.classList.add('selected');
       if (s.installed[id]) { b.classList.add('installed'); b.title = 'Installed'; }
-      if (lastNew === id) b.classList.add('glow');
+      if (glowId === id) b.classList.add('glow');
       b.innerHTML = glyph(id) + '<span></span>';
       b.lastChild.textContent = ITEMS[id].name;
       shelf.appendChild(b);
@@ -315,8 +429,11 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
     $('found-count').textContent = foundCount(s) + ' / ' + RECIPES.length;
     ['a', 'b'].forEach(k => {
       const el = $('slot-' + k);
-      if (slots[k]) { el.setAttribute('data-filled', slots[k]); el.textContent = ITEMS[slots[k]].name; }
-      else { el.removeAttribute('data-filled'); el.textContent = ''; }
+      const label = 'Crucible slot ' + k.toUpperCase();
+      if (slots[k]) {
+        el.setAttribute('data-filled', slots[k]); el.textContent = ITEMS[slots[k]].name;
+        el.setAttribute('aria-label', label + ': ' + ITEMS[slots[k]].name);
+      } else { el.removeAttribute('data-filled'); el.textContent = ''; el.setAttribute('aria-label', label + ', empty'); }
     });
     $('combine').disabled = !(slots.a && slots.b);
     $('message').textContent = message;
@@ -333,6 +450,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
       const id = el.getAttribute('data-slot');
       if (s.installed[id]) { el.setAttribute('data-installed', s.installed[id]); el.title = ITEMS[id].name + ' (installed)'; }
       else { el.removeAttribute('data-installed'); el.title = 'Needs: ' + ITEMS[id].name; }
+      el.setAttribute('aria-label', ITEMS[id].name + ' socket, ' + (s.installed[id] ? 'installed' : 'empty'));
     });
     $('companion').classList.toggle('alive', !!s.finished);
     const ending = $('ending');
@@ -374,6 +492,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
     const r = combine(state, slots.a, slots.b);
     slots = { a: null, b: null };
     lastNew = null;
+    play(r.outcome === 'new' ? 'bubble' : r.outcome === 'dud' ? 'puff' : 'clunk');
     if (r.outcome === 'new') { lastNew = r.result; message = ITEMS[r.result].flavor; }
     else if (r.outcome === 'known') message = 'You already know that one: ' + ITEMS[r.result].name + '.';
     else message = 'Nothing happens, but the crucible sends up a puff of smoke.';
@@ -410,6 +529,7 @@ main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;padding:16px 24px
       return;
     }
     selected = null;
+    play(r.state.finished ? 'thump' : 'clunk');
     if (r.state.finished) { finishedThisSession = true; message = 'The last part clicks home…'; }
     else message = ITEMS[slot].name + ' clicks into place.';
     dispatch(r.state);
