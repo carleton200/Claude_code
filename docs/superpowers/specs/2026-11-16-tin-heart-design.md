@@ -58,6 +58,33 @@ discovery.
 
 **Length.** About 15–20 minutes for a first playthrough.
 
+**Opening message** (user-approved 2026-11-17). On a new game, meaning a first
+visit with no save, or right after **Play again**, a card sits over the
+workshop with this text, verbatim:
+
+> **The Tin Heart**
+>
+> The old clockmaker left one job unfinished.
+>
+> On the workbench sits a little brass companion, its chest open and empty
+> where a heart should be. The master's notes are gone. All that's left on the
+> shelf is a bar of Brass, a live Ember, a bead of Quicksilver, and a single
+> Moth Wing.
+>
+> Combine what you have. Discover what it becomes. Build it a heart.
+>
+> • Click two ingredients to fill the crucible, then press **Combine**.
+> • Click a finished heart part to fit it into the companion's chest.
+> • Stuck? After a few misfires, the Recipe Book whispers a hint.
+>
+> **[ Light the forge ]**
+
+The button or the Escape key closes it. It never appears when a player
+returns to a game already in progress, meaning a save with any discovery
+beyond the starting four. It sits on top of the workshop and blocks clicks
+until it's closed. It uses the same warm palette and respects reduced motion.
+Whether it has been seen is not saved separately: any new game shows it.
+
 ### Recipe tree (20 recipes)
 
 Starting items: Brass, Ember, Quicksilver, Moth Wing.

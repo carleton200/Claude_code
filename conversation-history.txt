@@ -246,3 +246,20 @@ click Ember, Combine -> Molten Brass (3 clicks). Final suite on 84526e4:
 Build complete: 7 tasks, each test-first with an independent review, plus a
 final whole-project review and one fix wave. Ready to push to GitHub and
 publish with Pages (user's call).
+
+[USER]
+Make an opening message for the game
+
+[CLAUDE]
+Drafted the opening card text ("The old clockmaker left one job
+unfinished..." with three how-to-play lines and a "Light the forge" button).
+Proposed showing it as a card over the workshop on a new game (first visit
+and after Play again), skipped when resuming a game in progress.
+
+[USER]
+Yes
+
+[CLAUDE]
+Added the "Opening message" section to the design doc (text verbatim) and
+Task 8 to the plan. Building it test-first with a review, then retaking the
+screenshots.
